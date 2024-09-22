@@ -79,26 +79,43 @@ async def get_shortlink(url):
 @Client.on_message(filters.group & filters.text & filters.incoming)
 async def give_filter(client, message):
     if message.chat.id != SUPPORT_CHAT_ID:
+        settings = await get_settings(message.chat.id)
+        chatid = message.chat.id 
+        user_id = message.from_user.id if message.from_user else 0
+        if settings['fsub'] != None:
+            try:
+                btn = await pub_is_subscribed(client, message, settings['fsub'])
+                if btn:
+                    btn.append([InlineKeyboardButton("Unmute Me 🔕", callback_data=f"unmuteme#{int(user_id)}")])
+                    await client.restrict_chat_member(chatid, message.from_user.id, ChatPermissions(can_send_messages=False))
+                    await message.reply_photo(photo=random.choice(PICS), caption=f"👋 Hello {message.from_user.mention},\n\nPlease join the channel then click on unmute me button. 😇", reply_markup=InlineKeyboardMarkup(btn), parse_mode=enums.ParseMode.HTML)
+                    return
+            except Exception as e:
+                print(e)
+            
         manual = await manual_filters(client, message)
         if manual == False:
             settings = await get_settings(message.chat.id)
             try:
                 if settings['auto_ffilter']:
-                    await auto_filter(client, message)
+                    ai_search = True
+                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
+                    await auto_filter(client, message.text, message, reply_msg, ai_search)
             except KeyError:
                 grpid = await active_connection(str(message.from_user.id))
                 await save_group_settings(grpid, 'auto_ffilter', True)
                 settings = await get_settings(message.chat.id)
                 if settings['auto_ffilter']:
-                    await auto_filter(client, message) 
+                    ai_search = True
+                    reply_msg = await message.reply_text(f"<b><i>Searching For {message.text} 🔍</i></b>")
+                    await auto_filter(client, message.text, message, reply_msg, ai_search)
     else: #a better logic to avoid repeated lines of code in auto_filter function
         search = message.text
         temp_files, temp_offset, total_results = await get_search_results(chat_id=message.chat.id, query=search.lower(), offset=0, filter=True)
         if total_results == 0:
             return
         else:
-            return await message.reply_text(f"<b>Hᴇʏ {message.from_user.mention},\n\nʏᴏᴜʀ ʀᴇǫᴜᴇꜱᴛ ɪꜱ ᴀʟʀᴇᴀᴅʏ ᴀᴠᴀɪʟᴀʙʟᴇ ✅\n\n📂 ꜰɪʟᴇꜱ ꜰᴏᴜɴᴅ : {str(total_results)}\n🔍 ꜱᴇᴀʀᴄʜ :</b> <code>{search}</code>\n\n<b>‼️ ᴛʜɪs ɪs ᴀ <u>sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ</u> sᴏ ᴛʜᴀᴛ ʏᴏᴜ ᴄᴀɴ'ᴛ ɢᴇᴛ ғɪʟᴇs ғʀᴏᴍ ʜᴇʀᴇ...\n\n📝 ꜱᴇᴀʀᴄʜ ʜᴇʀᴇ : 👇</b>",   
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔍 ᴊᴏɪɴ ᴀɴᴅ ꜱᴇᴀʀᴄʜ ʜᴇʀᴇ 🔎", url=f"https://t.me/+hiveoUbOYqk1YzA9")]]))
+            return await message.reply_text(f"<b>Hᴇʏ {message.from_user.mention}, {str(total_results)} ʀᴇsᴜʟᴛs ᴀʀᴇ ғᴏᴜɴᴅ ɪɴ ᴍʏ ᴅᴀᴛᴀʙᴀsᴇ ғᴏʀ ʏᴏᴜʀ ᴏ̨ᴜᴇʀʏ {search}. \n\nTʜɪs ɪs ᴀ sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ sᴏ ᴛʜᴀᴛ ʏᴏᴜ ᴄᴀɴ'ᴛ ɢᴇᴛ ғɪʟᴇs ғʀᴏᴍ ʜᴇʀᴇ...\n\nJᴏɪɴ ᴀɴᴅ Sᴇᴀʀᴄʜ Hᴇʀᴇ - https://t.me/vj_bots</b>")
 
 @Client.on_message(filters.private & filters.text & filters.incoming)
 async def pm_text(bot, message):
@@ -106,16 +123,14 @@ async def pm_text(bot, message):
     user = message.from_user.first_name
     user_id = message.from_user.id
     if content.startswith("/") or content.startswith("#"): return  # ignore commands and hashtags
-    if user_id in ADMINS: return # ignore admins
-    await message.reply_text(
-         text=f"<b>ʜᴇʏ {user} 😍 ,\n\nʏᴏᴜ ᴄᴀɴ'ᴛ ɢᴇᴛ ᴍᴏᴠɪᴇs ꜰʀᴏᴍ ʜᴇʀᴇ. ʀᴇǫᴜᴇsᴛ ɪᴛ ɪɴ ᴏᴜʀ ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ ʙʏ ᴄʟɪᴄᴋɪɴɢ ᴏɴ ʙᴇʟᴏᴡ ʙᴜᴛᴛᴏɴ 👇</b>",   
-         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📝 ʀᴇǫᴜᴇsᴛ ʜᴇʀᴇ ", url=f"https://t.me/+hiveoUbOYqk1YzA9")]])
-    )
-    await bot.send_message(
-        chat_id=LOG_CHANNEL,
-        text=f"<b>#𝐏𝐌_𝐌𝐒𝐆\n\nNᴀᴍᴇ : {user}\n\nID : {user_id}\n\nMᴇssᴀɢᴇ : {content}</b>"
-    )
-
+    if PM_SEARCH == True:
+        ai_search = True
+        reply_msg = await bot.send_message(message.from_user.id, f"<b><i>Searching For {content} 🔍</i></b>", reply_to_message_id=message.id)
+        await auto_filter(bot, content, message, reply_msg, ai_search)
+    else:
+        await message.reply_text(text=f"<b>ʜᴇʏ {user} 😍 ,\n\nʏᴏᴜ ᴄᴀɴ'ᴛ ɢᴇᴛ ᴍᴏᴠɪᴇs ꜰʀᴏᴍ ʜᴇʀᴇ. ʀᴇǫᴜᴇsᴛ ɪᴛ ɪɴ ᴏᴜʀ <a href=https://t.me/+hiveoUbOYqk1YzA9>ᴍᴏᴠɪᴇ ɢʀᴏᴜᴘ</a> ᴏʀ ᴄʟɪᴄᴋ ʀᴇǫᴜᴇsᴛ ʜᴇʀᴇ ʙᴜᴛᴛᴏɴ ʙᴇʟᴏᴡ 👇</b>", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("📝 ʀᴇǫᴜᴇsᴛ ʜᴇʀᴇ ", url=f"https://t.me/+hiveoUbOYqk1YzA9")]]))
+        await bot.send_message(chat_id=LOG_CHANNEL, text=f"<b>#𝐏𝐌_𝐌𝐒𝐆\n\nNᴀᴍᴇ : {user}\n\nID : {user_id}\n\nMᴇssᴀɢᴇ : {content}</b>")
+        
 @Client.on_callback_query(filters.regex(r"^next"))
 async def next_page(bot, query):
     ident, req, key, offset = query.data.split("_")
@@ -276,34 +291,24 @@ async def next_page(bot, query):
 
 @Client.on_callback_query(filters.regex(r"^spol"))
 async def advantage_spoll_choker(bot, query):
-    _, user, movie_ = query.data.split('#')
-    movies = SPELL_CHECK.get(query.message.reply_to_message.id)
-    if not movies:
-        return await query.answer(script.OLD_ALRT_TXT.format(query.from_user.first_name), show_alert=True)
+    _, id, user = query.data.split('#')
     if int(user) != 0 and query.from_user.id != int(user):
-        return await query.answer(script.ALRT_TXT.format(query.from_user.first_name), show_alert=True)
-    if movie_ == "close_spellcheck":
-        return await query.message.delete()
-    movie = movies[(int(movie_))]
-    movie = re.sub(r"[:\-]", " ", movie)
-    movie = re.sub(r"\s+", " ", movie).strip()
-    await query.answer(script.TOP_ALRT_MSG)
-    gl = await global_filters(bot, query.message, text=movie)
-    if gl == False:
-        k = await manual_filters(bot, query.message, text=movie)
-        if k == False:
-            files, offset, total_results = await get_search_results(query.message.chat.id, movie, offset=0, filter=True)
-            if files:
-                k = (movie, files, offset, total_results)
-                await auto_filter(bot, query, k)
-            else:
-                reqstr1 = query.from_user.id if query.from_user else 0
-                reqstr = await bot.get_users(reqstr1)
-                if NO_RESULTS_MSG:
-                    await bot.send_message(chat_id=LOG_CHANNEL, text=(script.NORSLTS.format(reqstr.id, reqstr.mention, movie)))
-                k = await query.message.edit(script.MVE_NT_FND)
-                await asyncio.sleep(10)
-                await k.delete()
+        return await query.answer(script.ALRT_TXT, show_alert=True)
+    movie = await get_poster(id, id=True)
+    search = movie.get('title')
+    await query.answer('ᴄʜᴇᴄᴋɪɴɢ ɪɴ ᴍʏ ᴅᴀᴛᴀʙᴀꜱᴇ 🌚')
+    files, offset, total_results = await get_search_results(query.message.chat.id, search, offset=0, filter=True)
+    if files:
+        k = (search, files, offset, total_results)
+        await auto_filter(bot, query, k)
+    else:
+        k = await query.message.edit(script.NO_RESULT_TXT)
+        await asyncio.sleep(60)
+        await k.delete()
+        try:
+            await query.message.reply_to_message.delete()
+        except:
+            pass
 #Qualities 
 @Client.on_callback_query(filters.regex(r"^qualities#"))
 async def qualities_cb_handler(client: Client, query: CallbackQuery):
