@@ -15,7 +15,7 @@ def is_enabled(value, default):
 SESSION = environ.get('SESSION', 'Movie Provider Bot')
 API_ID = int(environ.get('API_ID', '22977776'))
 API_HASH = environ.get('API_HASH', '2ac7223d720bdeec757cbc88ced57224')
-BOT_TOKEN = environ.get('BOT_TOKEN', "7700797008:AAFvFY_WDucKfq5AhwoM3FGhWWUBAxEsw3o")
+BOT_TOKEN = environ.get('BOT_TOKEN', "6700618694:AAE3PpFp3Q8a1J38KlGxjEjkw_cncaOIPWY")
 
 # Bot settings
 CACHE_TIME = int(environ.get('CACHE_TIME', 300))
@@ -50,7 +50,7 @@ SUPPORT_CHAT_ID = int(support_chat_id) if support_chat_id and id_pattern.search(
 NO_RESULTS_MSG = bool(environ.get("NO_RESULTS_MSG", False)) # True if you want no results messages in Log Channel
 
 # MongoDB information
-DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://jeevanantham8157:1055221@filterbot.43l7b.mongodb.net/?retryWrites=true&w=majority&appName=Filterbot")
+DATABASE_URI = environ.get('DATABASE_URI', "mongodb+srv://Ajifilterbot:1055221@cluster0.pjrma.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 DATABASE_NAME = environ.get('DATABASE_NAME', "filterbot")
 COLLECTION_NAME = environ.get('COLLECTION_NAME', 'Telegram_files')
 
